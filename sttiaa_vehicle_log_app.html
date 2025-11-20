@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aplikasi Pencatatan Kendaraan STTIAA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 15px;
+    }
+    h2 {
+      text-align: center;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 16px;
+    }
+    .history-item {
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .toggle-arrow {
+      float: right;
+      transition: transform 0.2s ease;
+    }
+    .collapsed .toggle-arrow {
+      transform: rotate(-90deg);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Pencatatan Kendaraan STTIAA</h2>
+
+    <label for="nopol">Nomor Polisi</label>
+    <input type="text" id="nopol" placeholder="Masukkan nomor polisi" />
+
+    <label for="jenis">Jenis Kendaraan</label>
+    <select id="jenis">
+      <option value="Motor">Motor</option>
+      <option value="Mobil">Mobil</option>
+      <option value="Bus">Bus</option>
+      <option value="Truk">Truk</option>
+    </select>
+
+    <label for="status">Status</label>
+    <select id="status">
+      <option value="Masuk">Masuk</option>
+      <option value="Keluar">Keluar</option>
+    </select>
+
+    <label for="sopir">Nama Sopir</label>
+    <input type="text" id="sopir" placeholder="Masukkan nama sopir" />
+
+    <button id="saveBtn">Simpan</button>
+
+    <h3 id="historyHeader" style="cursor:pointer;">History <span class="toggle-arrow">▾</span></h3>
+    <div id="history" style="display:block;"></div>
+  </div>
+
+  <script>
+    // Load and render history from localStorage
+    function loadHistory() {
+      const data = JSON.parse(localStorage.getItem('riwayatKendaraan') || '[]');
+      const container = document.getElementById('history');
+      container.innerHTML = '';
+
+      if (data.length === 0) {
+        container.innerHTML = '<p style="color:#666">Belum ada riwayat.</p>';
+        return;
+      }
+
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+          <strong>${escapeHtml(item.nopol)}</strong> (${escapeHtml(item.jenis)})<br>
+          Status: ${escapeHtml(item.status)}<br>
+          Sopir: ${escapeHtml(item.sopir)}<br>
+          <small>${escapeHtml(item.waktu)}</small>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Move toggleHistory to global scope so onclick can access it
+    function toggleHistory() {
+      const header = document.getElementById('historyHeader');
+      const h = document.getElementById('history');
+      const arrow = header.querySelector('.toggle-arrow');
+      const isHidden = h.style.display === 'none';
+      h.style.display = isHidden ? 'block' : 'none';
+      header.classList.toggle('collapsed', !isHidden);
+      arrow.textContent = isHidden ? '▾' : '▸';
+    }
+
+    // Save entry to localStorage
+    function simpanData() {
+      const nopol = document.getElementById('nopol').value.trim();
+      const jenis = document.getElementById('jenis').value;
+      const status = document.getElementById('status').value;
+      const sopir = document.getElementById('sopir').value.trim();
+
+      if (!nopol || !sopir) {
+        alert('Harap isi semua field!');
+        return;
+      }
+
+      const entry = {
+        nopol,
+        jenis,
+        status,
+        sopir,
+        waktu: new Date().toLocaleString()
+      };
+
+      const existing = JSON.parse(localStorage.getItem('riwayatKendaraan') || '[]');
+      existing.unshift(entry);
+      localStorage.setItem('riwayatKendaraan', JSON.stringify(existing));
+
+      document.getElementById('nopol').value = '';
+      document.getElementById('sopir').value = '';
+
+      loadHistory();
+    }
+
+    // small helper to avoid HTML injection in displayed values
+    function escapeHtml(unsafe) {
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Setup event listeners
+    document.getElementById('saveBtn').addEventListener('click', simpanData);
+    document.getElementById('historyHeader').addEventListener('click', toggleHistory);
+
+    // Initial render
+    loadHistory();
+  </script>
+</body>
+</html>
